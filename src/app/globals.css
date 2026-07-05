@@ -1,36 +1,36 @@
 @import "tailwindcss";
 
 :root {
-  --background: 222 47% 11%;
-  --foreground: 213 31% 91%;
-  --card: 222 47% 13%;
-  --card-foreground: 213 31% 91%;
-  --popover: 222 47% 11%;
-  --popover-foreground: 213 31% 91%;
-  --primary: 217 91% 60%;
-  --primary-foreground: 222 47% 11%;
-  --secondary: 217 33% 17%;
-  --secondary-foreground: 213 31% 91%;
-  --muted: 223 47% 16%;
-  --muted-foreground: 215 20% 65%;
-  --accent: 217 33% 17%;
-  --accent-foreground: 213 31% 91%;
-  --destructive: 0 63% 45%;
-  --destructive-foreground: 213 31% 91%;
-  --border: 216 34% 20%;
-  --input: 216 34% 20%;
-  --ring: 217 91% 60%;
+  --background: 0 0% 94%;
+  --foreground: 0 0% 13%;
+  --card: 0 0% 100%;
+  --card-foreground: 0 0% 13%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 0 0% 13%;
+  --primary: 5 63% 45%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 0 0% 17%;
+  --secondary-foreground: 0 0% 100%;
+  --muted: 0 0% 96%;
+  --muted-foreground: 0 0% 40%;
+  --accent: 5 63% 95%;
+  --accent-foreground: 5 63% 35%;
+  --destructive: 5 63% 45%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 0 0% 87%;
+  --input: 0 0% 90%;
+  --ring: 5 63% 45%;
   --radius: 0.75rem;
 
-  /* Colores dinámicos de la empresa — sobreescritos vía JS con datos de Supabase */
-  --color-empresa-principal: #3B82F6;
-  --color-empresa-secundario: #1E40AF;
+  /* Colores dinámicos de la empresa — sobreescritos vía CSS variables desde layout */
+  --color-empresa-principal: #C0392B;
+  --color-empresa-secundario: #2c2c2c;
 
   /* Paleta para gráficos */
   --chart-ingreso: #27AE60;
-  --chart-gasto:   #C0392B;
-  --chart-1: #3B82F6;
-  --chart-2: #8B5CF6;
+  --chart-gasto: #C0392B;
+  --chart-1: #27AE60;
+  --chart-2: #C0392B;
   --chart-3: #F59E0B;
   --chart-4: #10B981;
   --chart-5: #EF4444;
@@ -77,11 +77,11 @@ body {
   font-family: var(--font-geist-sans), system-ui, sans-serif;
 }
 
-/* Fondo con logo Gazen — replicado del original */
+/* Fondo con logo Gazen — replicado del original Django */
 .gazen-bg {
   background-image: url("/gazen.png");
   background-size: cover;
-  background-position: center;
+  background-position: 20% 98%;
   background-attachment: fixed;
 }
 
@@ -89,13 +89,49 @@ body {
   content: "";
   position: fixed;
   inset: 0;
-  background: rgba(10, 15, 28, 0.85);
+  background: rgba(0, 0, 0, 0.15);
   z-index: 0;
   pointer-events: none;
+}
+
+/* Card styles matching Django exactly */
+.dashboard-card {
+  background-color: rgba(255, 255, 255, 0.95);
+  border-radius: 12px;
+  padding: 25px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.dashboard-card h2 {
+  margin-bottom: 15px;
+  color: var(--color-empresa-secundario);
+  font-weight: 600;
+  font-size: 1.3rem;
+  border-bottom: 2px solid var(--color-empresa-principal);
+  padding-bottom: 8px;
+  display: inline-block;
+}
+
+/* Transaction item styles */
+.transaccion-item {
+  background: white;
+  border: 1px solid #e8e8e8;
+  border-radius: 10px;
+  padding: 15px;
+  margin-bottom: 10px;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.transaccion-item:hover {
+  transform: translateX(5px);
+  box-shadow: 0 3px 10px rgba(192, 57, 43, 0.15);
+  border-color: var(--color-empresa-principal);
 }
 
 /* Scrollbar */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: hsl(var(--muted)); }
-::-webkit-scrollbar-thumb { background: hsl(var(--border)); border-radius: 3px; }
+::-webkit-scrollbar-thumb { background: var(--color-empresa-principal); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: hsl(var(--muted-foreground)); }
