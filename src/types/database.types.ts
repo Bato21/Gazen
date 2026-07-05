@@ -1,140 +1,171 @@
-export type Json = string | number | boolean | null | { [key: string]: Json } | Json[];
+export type Json = string | number | boolean | null | { [key: string]: Json } | Json[]
 
-export interface Database {
+// ── Row types ────────────────────────────────────────────────────────────────
+
+export interface Empresa {
+  id: string
+  nombre: string
+  direccion: string | null
+  membresia: 'Gratis' | 'Pro' | 'Premium' | 'Ultimate'
+  moneda: 'MXN' | 'USD' | 'EUR'
+  color_principal: string
+  color_secundario: string
+  created_at: string
+}
+
+export interface Usuario {
+  id: string
+  empresa_id: string
+  nombre: string
+  cargo: 'Administrador' | 'Contador' | 'Usuario' | 'Gerente'
+  es_admin: boolean
+  created_at: string
+}
+
+export interface Cuenta {
+  id: string
+  empresa_id: string
+  tipo_cuenta: 'Ahorro' | 'Corriente' | 'Inversión' | 'Crédito' | 'Efectivo'
+  nombre: string
+  saldo_inicial: number
+  created_at: string
+}
+
+export interface Categoria {
+  id: string
+  empresa_id: string | null
+  nombre: string
+  icono: string | null
+}
+
+export interface Emisor {
+  id: string
+  empresa_id: string
+  nombre: string
+  direccion: string | null
+}
+
+export interface Meta {
+  id: string
+  empresa_id: string
+  tipo: 'Ahorro' | 'Deuda'
+  nombre: string
+  monto_objetivo: number
+  monto_actual: number
+  interes_anual: number | null
+  fecha_inicio: string
+  fecha_limite: string | null
+  created_at: string
+}
+
+export interface Movimiento {
+  id: string
+  cuenta_id: string
+  usuario_id: string
+  categoria_id: string | null
+  tipo: 'Ingreso' | 'Gasto'
+  emisor_id: string | null
+  meta_id: string | null
+  monto: number
+  fecha: string
+  descripcion: string | null
+  created_at: string
+}
+
+export interface Deuda {
+  id: string
+  usuario_id: string
+  cuenta_id: string | null
+  acreedor: string
+  descripcion: string | null
+  monto_total: number
+  monto_pagado: number
+  fecha_vencimiento: string
+  prioridad: 'alta' | 'media' | 'baja'
+  estado: 'activa' | 'pagada' | 'cancelada'
+  tasa_interes: number
+  numero_cuotas: number | null
+  created_at: string
+}
+
+export interface PagoDeuda {
+  id: string
+  deuda_id: string
+  monto: number
+  fecha_pago: string
+  nota: string | null
+  created_at: string
+}
+
+// ── Database schema ───────────────────────────────────────────────────────────
+
+export type Database = {
   public: {
     Tables: {
       empresas: {
-        Row: {
-          id: string;
-          nombre: string;
-          direccion: string | null;
-          membresia: "Gratis" | "Pro" | "Premium" | "Ultimate";
-          moneda: "MXN" | "USD" | "EUR";
-          color_principal: string;
-          color_secundario: string;
-          created_at: string;
-        };
-        Insert: Omit<Database["public"]["Tables"]["empresas"]["Row"], "id" | "created_at">;
-        Update: Partial<Database["public"]["Tables"]["empresas"]["Insert"]>;
-      };
+        Row: Empresa
+        Insert: Omit<Empresa, 'id' | 'created_at'>
+        Update: Partial<Omit<Empresa, 'id' | 'created_at'>>
+      }
       usuarios: {
-        Row: {
-          id: string;
-          empresa_id: string;
-          nombre: string;
-          cargo: "Administrador" | "Contador" | "Usuario" | "Gerente";
-          es_admin: boolean;
-          created_at: string;
-        };
-        Insert: Omit<Database["public"]["Tables"]["usuarios"]["Row"], "created_at">;
-        Update: Partial<Database["public"]["Tables"]["usuarios"]["Insert"]>;
-      };
+        Row: Usuario
+        Insert: Omit<Usuario, 'created_at'>
+        Update: Partial<Omit<Usuario, 'id' | 'created_at'>>
+      }
       cuentas: {
-        Row: {
-          id: string;
-          empresa_id: string;
-          tipo_cuenta: "Ahorro" | "Corriente" | "Inversión" | "Crédito" | "Efectivo";
-          nombre: string;
-          saldo_inicial: number;
-          created_at: string;
-        };
-        Insert: Omit<Database["public"]["Tables"]["cuentas"]["Row"], "id" | "created_at">;
-        Update: Partial<Database["public"]["Tables"]["cuentas"]["Insert"]>;
-      };
-      movimientos: {
-        Row: {
-          id: string;
-          cuenta_id: string;
-          usuario_id: string;
-          categoria_id: string | null;
-          tipo: "Ingreso" | "Gasto";
-          emisor_id: string | null;
-          meta_id: string | null;
-          monto: number;
-          fecha: string;
-          descripcion: string | null;
-          created_at: string;
-        };
-        Insert: Omit<Database["public"]["Tables"]["movimientos"]["Row"], "id" | "created_at">;
-        Update: Partial<Database["public"]["Tables"]["movimientos"]["Insert"]>;
-      };
-      metas: {
-        Row: {
-          id: string;
-          empresa_id: string;
-          tipo: "Ahorro" | "Deuda";
-          nombre: string;
-          monto_objetivo: number;
-          monto_actual: number;
-          interes_anual: number | null;
-          fecha_inicio: string;
-          fecha_limite: string | null;
-          created_at: string;
-        };
-        Insert: Omit<Database["public"]["Tables"]["metas"]["Row"], "id" | "created_at">;
-        Update: Partial<Database["public"]["Tables"]["metas"]["Insert"]>;
-      };
-      deudas: {
-        Row: {
-          id: string;
-          usuario_id: string;
-          cuenta_id: string | null;
-          acreedor: string;
-          descripcion: string | null;
-          monto_total: number;
-          monto_pagado: number;
-          fecha_vencimiento: string;
-          prioridad: "alta" | "media" | "baja";
-          estado: "activa" | "pagada" | "cancelada";
-          tasa_interes: number;
-          numero_cuotas: number | null;
-          created_at: string;
-        };
-        Insert: Omit<Database["public"]["Tables"]["deudas"]["Row"], "id" | "created_at">;
-        Update: Partial<Database["public"]["Tables"]["deudas"]["Insert"]>;
-      };
-      pagos_deuda: {
-        Row: {
-          id: string;
-          deuda_id: string;
-          monto: number;
-          fecha_pago: string;
-          nota: string | null;
-          created_at: string;
-        };
-        Insert: Omit<Database["public"]["Tables"]["pagos_deuda"]["Row"], "id" | "created_at">;
-        Update: Partial<Database["public"]["Tables"]["pagos_deuda"]["Insert"]>;
-      };
+        Row: Cuenta
+        Insert: Omit<Cuenta, 'id' | 'created_at'>
+        Update: Partial<Omit<Cuenta, 'id' | 'created_at'>>
+      }
       categorias: {
-        Row: {
-          id: string;
-          nombre: string;
-          icono: string | null;
-          empresa_id: string | null;
-        };
-        Insert: Omit<Database["public"]["Tables"]["categorias"]["Row"], "id">;
-        Update: Partial<Database["public"]["Tables"]["categorias"]["Insert"]>;
-      };
+        Row: Categoria
+        Insert: Omit<Categoria, 'id'>
+        Update: Partial<Omit<Categoria, 'id'>>
+      }
       emisores: {
-        Row: {
-          id: string;
-          empresa_id: string;
-          nombre: string;
-          direccion: string | null;
-        };
-        Insert: Omit<Database["public"]["Tables"]["emisores"]["Row"], "id">;
-        Update: Partial<Database["public"]["Tables"]["emisores"]["Insert"]>;
-      };
-    };
-  };
+        Row: Emisor
+        Insert: Omit<Emisor, 'id'>
+        Update: Partial<Omit<Emisor, 'id'>>
+      }
+      metas: {
+        Row: Meta
+        Insert: Omit<Meta, 'id' | 'created_at'>
+        Update: Partial<Omit<Meta, 'id' | 'created_at'>>
+      }
+      movimientos: {
+        Row: Movimiento
+        Insert: Omit<Movimiento, 'id' | 'created_at'>
+        Update: Partial<Omit<Movimiento, 'id' | 'created_at'>>
+      }
+      deudas: {
+        Row: Deuda
+        Insert: Omit<Deuda, 'id' | 'created_at'>
+        Update: Partial<Omit<Deuda, 'id' | 'created_at'>>
+      }
+      pagos_deuda: {
+        Row: PagoDeuda
+        Insert: Omit<PagoDeuda, 'id' | 'created_at'>
+        Update: Partial<Omit<PagoDeuda, 'id' | 'created_at'>>
+      }
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      my_empresa_id: {
+        Args: Record<string, never>
+        Returns: string
+      }
+      is_admin: {
+        Args: Record<string, never>
+        Returns: boolean
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
 }
-
-export type Empresa = Database["public"]["Tables"]["empresas"]["Row"];
-export type Usuario = Database["public"]["Tables"]["usuarios"]["Row"];
-export type Cuenta = Database["public"]["Tables"]["cuentas"]["Row"];
-export type Movimiento = Database["public"]["Tables"]["movimientos"]["Row"];
-export type Meta = Database["public"]["Tables"]["metas"]["Row"];
-export type Deuda = Database["public"]["Tables"]["deudas"]["Row"];
-export type PagoDeuda = Database["public"]["Tables"]["pagos_deuda"]["Row"];
-export type Categoria = Database["public"]["Tables"]["categorias"]["Row"];
-export type Emisor = Database["public"]["Tables"]["emisores"]["Row"];
