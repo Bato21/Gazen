@@ -17,7 +17,9 @@ export default async function DeudasPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const hace30 = new Date(Date.now() - 30 * 86400000).toISOString().split('T')[0]
+  const hace30Date = new Date()
+  hace30Date.setDate(hace30Date.getDate() - 30)
+  const hace30 = hace30Date.toISOString().split('T')[0]
 
   // Fetch en paralelo
   const [{ data: deudasRaw }, { data: cuentasRaw }, { data: movimientosRaw }] = await Promise.all([

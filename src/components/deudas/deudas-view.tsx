@@ -2,9 +2,9 @@
 
 import { useState } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
-import { X, Plus, CreditCard } from 'lucide-react'
+import { X, Plus, CreditCard, Pencil, Trash2, CheckCircle2, XCircle, RotateCcw } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { crearDeuda, registrarPago } from '@/app/(app)/deudas/actions'
+import { crearDeuda, registrarPago, editarDeuda, eliminarDeuda, cambiarEstadoDeuda } from '@/app/(app)/deudas/actions'
 import type { Deuda, Cuenta } from '@/types/database.types'
 
 interface DeudaConCuenta extends Deuda {
@@ -45,8 +45,9 @@ function NuevaDeudaDialog({ cuentas, onSuccess }: { cuentas: Cuenta[]; onSuccess
   const [error, setError] = useState<string | null>(null)
   const [pending, setPending] = useState(false)
 
-  const today = new Date().toISOString().split('T')[0]
-  const in30 = new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0]
+  const in30Date = new Date()
+  in30Date.setDate(in30Date.getDate() + 30)
+  const in30 = in30Date.toISOString().split('T')[0]
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -296,6 +297,146 @@ function PagoDeudaDialog({ deuda, onSuccess }: { deuda: DeudaConCuenta | null; o
   )
 }
 
+function EditarDeudaDialog({
+  deuda,
+  cuentas,
+  open,
+  onOpenChange,
+  onSuccess,
+}: {
+  deuda: DeudaConCuenta | null
+  cuentas: Cuenta[]
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  onSuccess: () => void
+}) {
+  const [error, setError] = useState<string | null>(null)
+  const [pending, setPending] = useState(false)
+
+  if (!deuda) return null
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    setError(null)
+    setPending(true)
+    const result = await editarDeuda(new FormData(e.currentTarget))
+    setPending(false)
+    if (result.error) { setError(result.error); return }
+    onOpenChange(false)
+    onSuccess()
+  }
+
+  const inputStyle: React.CSSProperties = {
+    width: '100%', padding: '8px 10px', border: '1px solid #ced4da',
+    borderRadius: '6px', fontSize: '0.9rem', backgroundColor: '#fff',
+    color: '#212121', boxSizing: 'border-box',
+  }
+  const labelStyle: React.CSSProperties = {
+    display: 'block', fontSize: '0.85rem', fontWeight: 500,
+    color: '#444', marginBottom: '4px',
+  }
+
+  return (
+    <Dialog.Root open={open} onOpenChange={onOpenChange}>
+      <Dialog.Portal>
+        <Dialog.Overlay style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 100 }} />
+        <Dialog.Content style={{
+          position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)',
+          backgroundColor: 'white', borderRadius: '12px', padding: '28px',
+          width: '460px', maxWidth: '95vw', maxHeight: '90vh', overflowY: 'auto',
+          zIndex: 101, boxShadow: '0 10px 40px rgba(0,0,0,0.3)',
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+            <Dialog.Title style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700, color: '#2c2c2c' }}>
+              Editar deuda
+            </Dialog.Title>
+            <Dialog.Close asChild>
+              <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#666' }} aria-label="Cerrar">
+                <X size={20} />
+              </button>
+            </Dialog.Close>
+          </div>
+
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <input type="hidden" name="id" value={deuda.id} />
+
+            <div>
+              <label style={labelStyle}>Nombre / Acreedor</label>
+              <input name="nombre_deuda" type="text" required defaultValue={deuda.acreedor} style={inputStyle} />
+            </div>
+            <div>
+              <label style={labelStyle}>Monto Total</label>
+              <input name="monto_total" type="number" step="0.01" min="0.01" required
+                defaultValue={deuda.monto_total} style={inputStyle} />
+              <p style={{ fontSize: '0.75rem', color: '#666', margin: '4px 0 0' }}>
+                Ya pagado: {fmt(deuda.monto_pagado)}. El nuevo total no puede ser menor.
+              </p>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+              <div>
+                <label style={labelStyle}>Tasa de Interés (%)</label>
+                <input name="tasa_interes" type="number" step="0.01" min="0"
+                  defaultValue={deuda.tasa_interes} style={inputStyle} />
+              </div>
+              <div>
+                <label style={labelStyle}>N° de Cuotas</label>
+                <input name="numero_cuotas" type="number" min="1"
+                  defaultValue={deuda.numero_cuotas ?? ''} style={inputStyle} />
+              </div>
+            </div>
+            <div>
+              <label style={labelStyle}>Cuenta asociada</label>
+              <select name="idCuenta" defaultValue={deuda.cuenta_id ?? ''}
+                style={{ ...inputStyle, backgroundColor: '#f5bebe' }}>
+                <option value="">— Sin cuenta —</option>
+                {cuentas.map(c => <option key={c.id} value={c.id}>{c.nombre}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={labelStyle}>Prioridad</label>
+              <select name="prioridad" defaultValue={deuda.prioridad}
+                style={{ ...inputStyle, backgroundColor: '#f5bebe' }}>
+                <option value="alta">Alta</option>
+                <option value="media">Media</option>
+                <option value="baja">Baja</option>
+              </select>
+            </div>
+            <div>
+              <label style={labelStyle}>Fecha de Vencimiento</label>
+              <input name="fecha_vencimiento" type="date" required
+                defaultValue={deuda.fecha_vencimiento} style={inputStyle} />
+            </div>
+            <div>
+              <label style={labelStyle}>Descripción</label>
+              <textarea name="descripcion" rows={2} defaultValue={deuda.descripcion ?? ''}
+                style={{ ...inputStyle, resize: 'vertical' }} />
+            </div>
+
+            {error && <p style={{ color: '#C0392B', fontSize: '0.875rem', margin: 0 }}>{error}</p>}
+
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '4px' }}>
+              <Dialog.Close asChild>
+                <button type="button" style={{
+                  padding: '8px 18px', border: '1px solid #ccc', borderRadius: '8px',
+                  backgroundColor: 'white', cursor: 'pointer', fontSize: '0.9rem',
+                }}>Cancelar</button>
+              </Dialog.Close>
+              <button type="submit" disabled={pending} style={{
+                padding: '8px 18px', border: 'none', borderRadius: '8px',
+                backgroundColor: 'var(--color-empresa-principal)', color: 'white',
+                cursor: pending ? 'not-allowed' : 'pointer', fontSize: '0.9rem',
+                fontWeight: 600, opacity: pending ? 0.7 : 1,
+              }}>
+                {pending ? 'Guardando…' : 'Guardar'}
+              </button>
+            </div>
+          </form>
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
+  )
+}
+
 export function DeudasView({
   deudas, cuentas,
   totalDeuda, totalPagado, totalRestante,
@@ -304,6 +445,27 @@ export function DeudasView({
 }: Props) {
   const router = useRouter()
   const refresh = () => router.refresh()
+
+  const [editando, setEditando] = useState<DeudaConCuenta | null>(null)
+  const [editOpen, setEditOpen] = useState(false)
+
+  const handleEditar = (deuda: DeudaConCuenta) => {
+    setEditando(deuda)
+    setEditOpen(true)
+  }
+
+  const handleEliminar = async (id: string, acreedor: string) => {
+    if (!window.confirm(`¿Eliminar la deuda "${acreedor}"? Esta acción no se puede deshacer.`)) return
+    const result = await eliminarDeuda(id)
+    if (result.error) { window.alert(result.error); return }
+    refresh()
+  }
+
+  const handleCambiarEstado = async (id: string, nuevoEstado: 'activa' | 'pagada' | 'cancelada') => {
+    const result = await cambiarEstadoDeuda(id, nuevoEstado)
+    if (result.error) { window.alert(result.error); return }
+    refresh()
+  }
 
   const badge = estadoBadge[estadoCapacidad]
   const deudasActivas = deudas.filter(d => d.estado !== 'pagada')
@@ -441,7 +603,16 @@ export function DeudasView({
               No tienes deudas activas
             </p>
           )}
-          {deudasActivas.map(deuda => <DeudaItem key={deuda.id} deuda={deuda} onSuccess={refresh} />)}
+          {deudasActivas.map(deuda => (
+            <DeudaItem
+              key={deuda.id}
+              deuda={deuda}
+              onSuccess={refresh}
+              onEditar={handleEditar}
+              onEliminar={handleEliminar}
+              onCambiarEstado={handleCambiarEstado}
+            />
+          ))}
         </div>
 
         {/* Deudas pagadas */}
@@ -455,21 +626,62 @@ export function DeudasView({
               Deudas Pagadas ✅
             </h3>
             <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
-              {deudasPagadas.map(deuda => <DeudaItem key={deuda.id} deuda={deuda} onSuccess={refresh} />)}
+              {deudasPagadas.map(deuda => (
+                <DeudaItem
+                  key={deuda.id}
+                  deuda={deuda}
+                  onSuccess={refresh}
+                  onEditar={handleEditar}
+                  onEliminar={handleEliminar}
+                  onCambiarEstado={handleCambiarEstado}
+                />
+              ))}
             </div>
           </>
         )}
       </div>
+
+      <EditarDeudaDialog
+        deuda={editando}
+        cuentas={cuentas}
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        onSuccess={refresh}
+      />
     </div>
   )
 }
 
-function DeudaItem({ deuda, onSuccess }: { deuda: DeudaConCuenta; onSuccess: () => void }) {
+function DeudaItem({
+  deuda,
+  onSuccess,
+  onEditar,
+  onEliminar,
+  onCambiarEstado,
+}: {
+  deuda: DeudaConCuenta
+  onSuccess: () => void
+  onEditar: (deuda: DeudaConCuenta) => void
+  onEliminar: (id: string, acreedor: string) => void
+  onCambiarEstado: (id: string, nuevoEstado: 'activa' | 'pagada' | 'cancelada') => void
+}) {
   const restante = deuda.monto_total - deuda.monto_pagado
   const porcentaje = deuda.monto_total > 0 ? clamp((deuda.monto_pagado / deuda.monto_total) * 100) : 0
   const today = new Date().toISOString().split('T')[0]
   const vencida = deuda.estado === 'activa' && deuda.fecha_vencimiento < today
   const pagada = deuda.estado === 'pagada'
+  const cancelada = deuda.estado === 'cancelada'
+
+  const iconBtn: React.CSSProperties = {
+    background: 'none', border: '1px solid #ccc', borderRadius: '6px',
+    padding: '4px 6px', cursor: 'pointer', color: '#666',
+    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+  }
+  const chipBtn: React.CSSProperties = {
+    background: '#fff', border: '1px solid #ccc', borderRadius: '6px',
+    padding: '3px 8px', cursor: 'pointer', fontSize: '0.72rem', fontWeight: 600,
+    display: 'inline-flex', alignItems: 'center', gap: '4px',
+  }
 
   return (
     <div style={{
@@ -505,6 +717,12 @@ function DeudaItem({ deuda, onSuccess }: { deuda: DeudaConCuenta; onSuccess: () 
                 background: '#d4edda', color: '#27AE60', border: '1px solid #27AE60',
               }}>PAGADA</span>
             )}
+            {cancelada && (
+              <span style={{
+                fontSize: '0.7rem', fontWeight: 700, padding: '2px 8px', borderRadius: '10px',
+                background: '#e9ecef', color: '#6c757d', border: '1px solid #6c757d',
+              }}>CANCELADA</span>
+            )}
           </div>
 
           {deuda.descripcion && (
@@ -526,11 +744,42 @@ function DeudaItem({ deuda, onSuccess }: { deuda: DeudaConCuenta; onSuccess: () 
         </div>
 
         {/* Montos + botón derecha */}
-        <div style={{ textAlign: 'right', minWidth: '130px' }}>
+        <div style={{ textAlign: 'right', minWidth: '150px' }}>
           <div style={{ fontSize: '0.8rem', color: '#888' }}>Total: <strong style={{ color: '#2c2c2c' }}>{fmt(deuda.monto_total)}</strong></div>
           <div style={{ fontSize: '0.8rem', color: '#888' }}>Pagado: <strong style={{ color: '#27AE60' }}>{fmt(deuda.monto_pagado)}</strong></div>
           <div style={{ fontSize: '0.8rem', color: '#888', marginBottom: '8px' }}>Restante: <strong style={{ color: '#C0392B' }}>{fmt(restante)}</strong></div>
-          {!pagada && <PagoDeudaDialog deuda={deuda} onSuccess={onSuccess} />}
+
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', justifyContent: 'flex-end', marginBottom: '6px' }}>
+            {!pagada && !cancelada && <PagoDeudaDialog deuda={deuda} onSuccess={onSuccess} />}
+            <button type="button" style={iconBtn} onClick={() => onEditar(deuda)} aria-label="Editar deuda" title="Editar">
+              <Pencil size={14} />
+            </button>
+            <button type="button" style={{ ...iconBtn, color: '#C0392B', borderColor: '#e6b0aa' }}
+              onClick={() => onEliminar(deuda.id, deuda.acreedor)} aria-label="Eliminar deuda" title="Eliminar">
+              <Trash2 size={14} />
+            </button>
+          </div>
+
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', justifyContent: 'flex-end' }}>
+            {deuda.estado === 'activa' && (
+              <>
+                <button type="button" style={{ ...chipBtn, color: '#27AE60', borderColor: '#a3e0b6' }}
+                  onClick={() => onCambiarEstado(deuda.id, 'pagada')} title="Marcar como pagada">
+                  <CheckCircle2 size={12} /> Pagada
+                </button>
+                <button type="button" style={{ ...chipBtn, color: '#6c757d', borderColor: '#ced4da' }}
+                  onClick={() => onCambiarEstado(deuda.id, 'cancelada')} title="Cancelar deuda">
+                  <XCircle size={12} /> Cancelar
+                </button>
+              </>
+            )}
+            {(pagada || cancelada) && (
+              <button type="button" style={{ ...chipBtn, color: 'var(--color-empresa-principal)', borderColor: '#e0c9c9' }}
+                onClick={() => onCambiarEstado(deuda.id, 'activa')} title="Reactivar deuda">
+                <RotateCcw size={12} /> Reactivar
+              </button>
+            )}
+          </div>
         </div>
       </div>
 

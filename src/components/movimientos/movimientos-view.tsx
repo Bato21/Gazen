@@ -4,9 +4,10 @@ import { useState } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
 import {
   Car, Utensils, Package, Gamepad2, Zap, HeartPulse, GraduationCap, Home,
-  Tag, ArrowUpCircle, ArrowDownCircle, Calendar, X, Plus,
+  Tag, ArrowUpCircle, ArrowDownCircle, Calendar, X, Plus, Pencil, Trash2,
 } from 'lucide-react'
 import { crearCuenta } from '@/app/(app)/movimientos/actions'
+import { editarMovimiento, eliminarMovimiento } from '@/app/(app)/actions'
 import type { Cuenta } from '@/types/database.types'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -18,13 +19,20 @@ export interface MovimientoRow {
   fecha: string
   descripcion: string | null
   cuenta_id: string
+  categoria_id: string | null
+  meta_id: string | null
   categorias: { nombre: string; icono: string | null } | null
   cuentas: { nombre: string; tipo_cuenta: string } | null
 }
 
+export interface NavCategoria { id: string; nombre: string; icono: string | null }
+export interface NavMeta { id: string; nombre: string; tipo: string }
+
 interface Props {
   cuentas: Cuenta[]
   movimientos: MovimientoRow[]
+  categorias: NavCategoria[]
+  metas: NavMeta[]
 }
 
 // ── Icon map (Lucide) ──────────────────────────────────────────────────────────
@@ -169,14 +177,181 @@ function NuevaCuentaDialog({ onCreated }: { onCreated: () => void }) {
   )
 }
 
+function EditarMovimientoDialog({
+  movimiento,
+  cuentas,
+  categorias,
+  metas,
+  open,
+  onOpenChange,
+}: {
+  movimiento: MovimientoRow | null
+  cuentas: Cuenta[]
+  categorias: NavCategoria[]
+  metas: NavMeta[]
+  open: boolean
+  onOpenChange: (open: boolean) => void
+}) {
+  const [error, setError] = useState<string | null>(null)
+  const [pending, setPending] = useState(false)
+
+  if (!movimiento) return null
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    setError(null)
+    setPending(true)
+    const result = await editarMovimiento(new FormData(e.currentTarget))
+    setPending(false)
+    if (result.error) { setError(result.error); return }
+    onOpenChange(false)
+    window.location.reload()
+  }
+
+  const inputStyle: React.CSSProperties = {
+    width: '100%', padding: '8px 10px', border: '1px solid #ced4da',
+    borderRadius: '6px', fontSize: '0.9rem', backgroundColor: '#fff',
+    color: '#212121', boxSizing: 'border-box',
+  }
+  const selectStyle: React.CSSProperties = { ...inputStyle, backgroundColor: '#f5bebe' }
+  const labelStyle: React.CSSProperties = {
+    display: 'block', fontSize: '0.85rem', fontWeight: 500,
+    color: '#444', marginBottom: '4px',
+  }
+
+  const fechaLocal = new Date(movimiento.fecha)
+  const tzOffsetMs = fechaLocal.getTimezoneOffset() * 60000
+  const fechaInput = new Date(fechaLocal.getTime() - tzOffsetMs).toISOString().slice(0, 16)
+
+  return (
+    <Dialog.Root open={open} onOpenChange={onOpenChange}>
+      <Dialog.Portal>
+        <Dialog.Overlay style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 100 }} />
+        <Dialog.Content style={{
+          position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)',
+          backgroundColor: 'white', borderRadius: '12px', padding: '30px',
+          width: '480px', maxWidth: '95vw', maxHeight: '90vh', overflowY: 'auto',
+          zIndex: 101, boxShadow: '0 10px 40px rgba(0,0,0,0.3)',
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+            <Dialog.Title style={{ margin: 0, fontSize: '1.3rem', fontWeight: 700, color: '#2c2c2c' }}>
+              Editar movimiento
+            </Dialog.Title>
+            <Dialog.Close asChild>
+              <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#666' }} aria-label="Cerrar">
+                <X size={20} />
+              </button>
+            </Dialog.Close>
+          </div>
+
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <input type="hidden" name="id" value={movimiento.id} />
+
+            <div>
+              <label style={labelStyle}>Descripción</label>
+              <input name="descripcion" type="text" defaultValue={movimiento.descripcion ?? ''} style={inputStyle} />
+            </div>
+
+            <div>
+              <label style={labelStyle}>Valor</label>
+              <input name="valor" type="number" step="0.01" min="0" required defaultValue={movimiento.monto} style={inputStyle} />
+            </div>
+
+            <div>
+              <label style={labelStyle}>Categoría</label>
+              <select name="categoria" defaultValue={movimiento.categoria_id ?? ''} style={selectStyle}>
+                <option value="">Sin categoría</option>
+                {categorias.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.icono ? `${cat.icono} ` : ''}{cat.nombre}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label style={labelStyle}>Meta</label>
+              <select name="meta" defaultValue={movimiento.meta_id ?? ''} style={selectStyle}>
+                <option value="">Sin meta</option>
+                {metas.map((meta) => (
+                  <option key={meta.id} value={meta.id}>{meta.nombre}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label style={labelStyle}>Tipo</label>
+              <select name="tipoIngreso" required defaultValue={movimiento.tipo} style={selectStyle}>
+                <option value="Ingreso">Ingreso</option>
+                <option value="Gasto">Gasto</option>
+              </select>
+            </div>
+
+            <div>
+              <label style={labelStyle}>Cuenta asociada</label>
+              <select name="cuenta" required defaultValue={movimiento.cuenta_id} style={selectStyle}>
+                {cuentas.map((cuenta) => (
+                  <option key={cuenta.id} value={cuenta.id}>
+                    {cuenta.nombre} ({cuenta.tipo_cuenta})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label style={labelStyle}>Fecha y hora</label>
+              <input name="fecha" type="datetime-local" required defaultValue={fechaInput} style={inputStyle} />
+            </div>
+
+            {error && <p style={{ color: '#C0392B', fontSize: '0.875rem', margin: 0 }}>{error}</p>}
+
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '6px' }}>
+              <Dialog.Close asChild>
+                <button type="button" style={{
+                  padding: '9px 20px', border: '1px solid #ccc', borderRadius: '8px',
+                  backgroundColor: 'white', cursor: 'pointer', fontSize: '0.9rem',
+                }}>Cancelar</button>
+              </Dialog.Close>
+              <button type="submit" disabled={pending} style={{
+                padding: '9px 20px', border: 'none', borderRadius: '8px',
+                backgroundColor: 'var(--color-empresa-principal)', color: 'white',
+                cursor: pending ? 'not-allowed' : 'pointer', fontSize: '0.9rem',
+                fontWeight: 600, opacity: pending ? 0.7 : 1,
+              }}>
+                {pending ? 'Guardando…' : 'Guardar'}
+              </button>
+            </div>
+          </form>
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
+  )
+}
+
 // ── Main view ──────────────────────────────────────────────────────────────────
 
-export function MovimientosView({ cuentas, movimientos }: Props) {
+export function MovimientosView({ cuentas, movimientos, categorias, metas }: Props) {
   const [selectedCuentaId, setSelectedCuentaId] = useState<string | null>(null)
+  const [editing, setEditing] = useState<MovimientoRow | null>(null)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
 
   const filtered = selectedCuentaId
     ? movimientos.filter((m) => m.cuenta_id === selectedCuentaId)
     : movimientos
+
+  async function handleEliminar(mov: MovimientoRow) {
+    const monto = fmt(mov.monto)
+    const desc = mov.descripcion ?? 'este movimiento'
+    if (!window.confirm(`¿Eliminar ${desc} (${monto})? Esta acción no se puede deshacer.`)) return
+    setDeletingId(mov.id)
+    const res = await eliminarMovimiento(mov.id)
+    setDeletingId(null)
+    if (res.error) {
+      window.alert(`Error al eliminar: ${res.error}`)
+      return
+    }
+    window.location.reload()
+  }
 
   return (
     <div style={{
@@ -318,8 +493,10 @@ export function MovimientosView({ cuentas, movimientos }: Props) {
                 day: '2-digit', month: 'short', year: 'numeric',
               })
 
+              const isDeleting = deletingId === mov.id
+
               return (
-                <div key={mov.id} className="transaccion-item">
+                <div key={mov.id} className="transaccion-item" style={{ opacity: isDeleting ? 0.5 : 1 }}>
                   <div className="transaccion-header">
                     <div className="transaccion-info">
                       {/* Category icon circle */}
@@ -336,8 +513,42 @@ export function MovimientosView({ cuentas, movimientos }: Props) {
                         </div>
                       </div>
                     </div>
-                    <div className="transaccion-monto" style={{ color }}>
-                      {esIngreso ? '+' : '-'}{fmt(mov.monto)}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <div className="transaccion-monto" style={{ color }}>
+                        {esIngreso ? '+' : '-'}{fmt(mov.monto)}
+                      </div>
+                      <div style={{ display: 'flex', gap: 4 }}>
+                        <button
+                          onClick={() => setEditing(mov)}
+                          disabled={isDeleting}
+                          aria-label="Editar movimiento"
+                          title="Editar"
+                          style={{
+                            background: 'transparent', border: 'none', cursor: 'pointer',
+                            padding: 6, borderRadius: 6, color: '#555',
+                            display: 'flex', alignItems: 'center',
+                          }}
+                          onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#eef2ff'; e.currentTarget.style.color = '#3B82F6' }}
+                          onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#555' }}
+                        >
+                          <Pencil size={15} />
+                        </button>
+                        <button
+                          onClick={() => handleEliminar(mov)}
+                          disabled={isDeleting}
+                          aria-label="Eliminar movimiento"
+                          title="Eliminar"
+                          style={{
+                            background: 'transparent', border: 'none', cursor: isDeleting ? 'not-allowed' : 'pointer',
+                            padding: 6, borderRadius: 6, color: '#555',
+                            display: 'flex', alignItems: 'center',
+                          }}
+                          onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#fee2e2'; e.currentTarget.style.color = '#C0392B' }}
+                          onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#555' }}
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      </div>
                     </div>
                   </div>
                   <div className="transaccion-footer">
@@ -355,6 +566,15 @@ export function MovimientosView({ cuentas, movimientos }: Props) {
           )}
         </div>
       </div>
+
+      <EditarMovimientoDialog
+        movimiento={editing}
+        cuentas={cuentas}
+        categorias={categorias}
+        metas={metas}
+        open={editing !== null}
+        onOpenChange={(open) => { if (!open) setEditing(null) }}
+      />
     </div>
   )
 }

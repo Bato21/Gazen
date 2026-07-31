@@ -85,3 +85,96 @@ export async function registrarPago(formData: FormData): Promise<{ error?: strin
   revalidatePath('/deudas')
   return { success: true }
 }
+
+export async function editarDeuda(formData: FormData): Promise<{ error?: string; success?: boolean }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'No autorizado' }
+
+  const id = formData.get('id') as string
+  if (!id) return { error: 'Deuda no identificada.' }
+
+  const acreedor = (formData.get('nombre_deuda') as string)?.trim()
+  const montoTotal = parseFloat(formData.get('monto_total') as string)
+  const tasaInteres = parseFloat(formData.get('tasa_interes') as string) || 0
+  const numeroCuotas = parseInt(formData.get('numero_cuotas') as string) || null
+  const cuentaId = (formData.get('idCuenta') as string) || null
+  const fechaVencimiento = formData.get('fecha_vencimiento') as string
+  const descripcion = (formData.get('descripcion') as string)?.trim() || null
+  const prioridad = (formData.get('prioridad') as 'alta' | 'media' | 'baja') || 'media'
+
+  if (!acreedor) return { error: 'El nombre de la deuda es requerido.' }
+  if (isNaN(montoTotal) || montoTotal <= 0) return { error: 'El monto total debe ser mayor a 0.' }
+  if (!fechaVencimiento) return { error: 'La fecha de vencimiento es requerida.' }
+
+  // Verifica que el nuevo monto total no sea menor a lo ya pagado
+  const { data: actual } = await supabase
+    .from('deudas').select('monto_pagado').eq('id', id).single() as unknown as
+    { data: { monto_pagado: number } | null }
+  if (actual && montoTotal < actual.monto_pagado) {
+    return { error: `El nuevo monto total (${montoTotal}) no puede ser menor a lo ya pagado (${actual.monto_pagado}).` }
+  }
+
+  const { error } = await (supabase.from('deudas') as unknown as {
+    update: (data: object) => {
+      eq: (col: string, val: string) => Promise<{ error: { message: string } | null }>
+    }
+  })
+    .update({
+      acreedor,
+      descripcion,
+      monto_total: montoTotal,
+      tasa_interes: tasaInteres,
+      numero_cuotas: numeroCuotas,
+      cuenta_id: cuentaId,
+      fecha_vencimiento: fechaVencimiento,
+      prioridad,
+    })
+    .eq('id', id)
+
+  if (error) return { error: error.message }
+
+  revalidatePath('/deudas')
+  return { success: true }
+}
+
+export async function eliminarDeuda(id: string): Promise<{ error?: string; success?: boolean }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'No autorizado' }
+  if (!id) return { error: 'Deuda no identificada.' }
+
+  const { error } = await (supabase.from('deudas') as unknown as {
+    delete: () => {
+      eq: (col: string, val: string) => Promise<{ error: { message: string } | null }>
+    }
+  }).delete().eq('id', id)
+
+  if (error) return { error: error.message }
+
+  revalidatePath('/deudas')
+  return { success: true }
+}
+
+export async function cambiarEstadoDeuda(
+  id: string,
+  nuevoEstado: 'activa' | 'pagada' | 'cancelada',
+): Promise<{ error?: string; success?: boolean }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'No autorizado' }
+  if (!id) return { error: 'Deuda no identificada.' }
+
+  const { error } = await (supabase.from('deudas') as unknown as {
+    update: (data: object) => {
+      eq: (col: string, val: string) => Promise<{ error: { message: string } | null }>
+    }
+  })
+    .update({ estado: nuevoEstado })
+    .eq('id', id)
+
+  if (error) return { error: error.message }
+
+  revalidatePath('/deudas')
+  return { success: true }
+}
