@@ -104,12 +104,18 @@ export default function LoginPage() {
         <p
           style={{
             textAlign: 'center',
-            fontSize: '0.8rem',
-            color: 'rgba(255,255,255,0.85)',
+            fontSize: '0.85rem',
+            color: 'rgba(255,255,255,0.95)',
             marginTop: '16px',
           }}
         >
-          ¿Problemas para acceder? Contacta a tu administrador.
+          <a href="/registro" style={{ color: 'white', fontWeight: 600, textDecoration: 'underline' }}>
+            Únete a una empresa
+          </a>
+          {' · '}
+          <a href="/registro-empresa" style={{ color: 'white', fontWeight: 600, textDecoration: 'underline' }}>
+            Registra tu empresa
+          </a>
         </p>
       </div>
     </div>
