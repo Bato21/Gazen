@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { NuevaMetaDialog } from '@/components/ahorro/nueva-meta-dialog'
+import { MetaCard } from '@/components/ahorro/meta-card'
 import type { Meta } from '@/types/database.types'
 
 function fmt(n: number) {
@@ -77,72 +78,7 @@ export default async function AhorrosPage() {
           </p>
         )}
 
-        {metas.map((meta) => {
-          const porcentaje = meta.monto_objetivo > 0
-            ? clamp((meta.monto_actual / meta.monto_objetivo) * 100)
-            : 0
-          const falta = Math.max(0, meta.monto_objetivo - meta.monto_actual)
-
-          return (
-            <div key={meta.id} style={{
-              background: '#f8f9fa', borderRadius: '10px', padding: '18px',
-              marginBottom: '12px', border: '1px solid #e0e0e0',
-              transition: 'all 0.3s ease', cursor: 'default',
-            }}
-              onMouseEnter={(e) => {
-                const el = e.currentTarget as HTMLDivElement
-                el.style.background = '#f0f0f0'
-                el.style.transform = 'translateX(5px)'
-                el.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)'
-              }}
-              onMouseLeave={(e) => {
-                const el = e.currentTarget as HTMLDivElement
-                el.style.background = '#f8f9fa'
-                el.style.transform = 'translateX(0)'
-                el.style.boxShadow = 'none'
-              }}
-            >
-              {/* Nombre */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                <span style={{ color: '#333', fontSize: '1.1rem', fontWeight: 600 }}>
-                  {meta.nombre}
-                </span>
-                {meta.fecha_limite && (
-                  <span style={{ fontSize: '0.75rem', color: '#999' }}>
-                    hasta {new Date(meta.fecha_limite).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })}
-                  </span>
-                )}
-              </div>
-
-              {/* Montos */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '6px' }}>
-                <span style={{ color: '#27AE60', fontWeight: 600 }}>{fmt(meta.monto_actual)}</span>
-                <span style={{ color: 'var(--color-empresa-principal)', fontWeight: 600 }}>{fmt(meta.monto_objetivo)}</span>
-              </div>
-
-              {/* Barra de progreso */}
-              <div style={{
-                background: '#e0e0e0', height: '20px', borderRadius: '10px',
-                overflow: 'hidden', border: '1px solid #ccc',
-              }}>
-                <div style={{
-                  background: 'linear-gradient(90deg, #27AE60 0%, #2ECC71 100%)',
-                  width: `${porcentaje}%`, height: '100%',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: '0.75rem', fontWeight: 700, color: '#fff',
-                  transition: 'width 0.5s ease', minWidth: porcentaje > 0 ? '28px' : '0',
-                }}>
-                  {porcentaje > 8 ? `${porcentaje.toFixed(0)}%` : ''}
-                </div>
-              </div>
-
-              {/* Falta */}
-              <div style={{ textAlign: 'right', fontSize: '0.8rem', color: '#999', marginTop: '5px' }}>
-                Falta: {fmt(falta)}
-              </div>
-            </div>
-          )
-        })}
+        {metas.map((meta) => <MetaCard key={meta.id} meta={meta} />)}
 
         <NuevaMetaDialog />
       </div>

@@ -39,3 +39,57 @@ export async function crearMeta(formData: FormData): Promise<{ error?: string; s
   revalidatePath('/ahorros')
   return { success: true }
 }
+
+export async function editarMeta(formData: FormData): Promise<{ error?: string; success?: boolean }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'No autorizado' }
+
+  const id = formData.get('id') as string
+  if (!id) return { error: 'Meta no identificada.' }
+
+  const nombre = (formData.get('nombre_meta') as string)?.trim()
+  const montoObjetivo = parseFloat(formData.get('monto_objetivo') as string)
+  const montoActual = parseFloat(formData.get('monto_actual') as string)
+  const fechaLimite = (formData.get('fecha_limite') as string) || null
+
+  if (!nombre) return { error: 'El nombre de la meta es requerido.' }
+  if (isNaN(montoObjetivo) || montoObjetivo <= 0) return { error: 'El monto objetivo debe ser mayor a 0.' }
+  if (isNaN(montoActual) || montoActual < 0) return { error: 'El monto actual no puede ser negativo.' }
+
+  const { error } = await (supabase.from('metas') as unknown as {
+    update: (data: object) => {
+      eq: (col: string, val: string) => Promise<{ error: { message: string } | null }>
+    }
+  })
+    .update({
+      nombre,
+      monto_objetivo: montoObjetivo,
+      monto_actual: montoActual,
+      fecha_limite: fechaLimite,
+    })
+    .eq('id', id)
+
+  if (error) return { error: error.message }
+
+  revalidatePath('/ahorros')
+  return { success: true }
+}
+
+export async function eliminarMeta(id: string): Promise<{ error?: string; success?: boolean }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'No autorizado' }
+  if (!id) return { error: 'Meta no identificada.' }
+
+  const { error } = await (supabase.from('metas') as unknown as {
+    delete: () => {
+      eq: (col: string, val: string) => Promise<{ error: { message: string } | null }>
+    }
+  }).delete().eq('id', id)
+
+  if (error) return { error: error.message }
+
+  revalidatePath('/ahorros')
+  return { success: true }
+}
