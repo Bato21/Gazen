@@ -14,6 +14,7 @@ import {
   LogOut,
   Link,
   User,
+  Building2,
   X,
 } from 'lucide-react'
 import { crearMovimiento } from '@/app/(app)/actions'
@@ -40,6 +41,7 @@ interface AppNavbarProps {
   nombreEmpresa: string
   nombreUsuario: string
   userEmail: string
+  esAdmin: boolean
   cuentas: NavCuenta[]
   categorias: NavCategoria[]
   metas: NavMeta[]
@@ -56,6 +58,7 @@ export function AppNavbar({
   nombreEmpresa,
   nombreUsuario,
   userEmail,
+  esAdmin,
   cuentas,
   categorias,
   metas,
@@ -476,6 +479,36 @@ export function AppNavbar({
                 <User size={16} />
                 Mi perfil
               </button>
+              {esAdmin && (
+                <button
+                  onClick={() => {
+                    setDropdownOpen(false)
+                    router.push('/empresa')
+                  }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    width: '100%',
+                    padding: '12px 16px',
+                    border: 'none',
+                    backgroundColor: 'transparent',
+                    cursor: 'pointer',
+                    fontSize: '0.9rem',
+                    color: '#212121',
+                    textAlign: 'left',
+                  }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#f5f5f5'
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'transparent'
+                  }}
+                >
+                  <Building2 size={16} />
+                  Mi empresa
+                </button>
+              )}
               <button
                 onClick={() => {
                   setDropdownOpen(false)

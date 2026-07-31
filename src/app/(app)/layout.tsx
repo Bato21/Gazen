@@ -83,6 +83,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           nombreEmpresa={empresa.nombre}
           nombreUsuario={usuario?.nombre ?? user.email ?? 'Usuario'}
           userEmail={user.email ?? ''}
+          esAdmin={usuario?.es_admin ?? false}
           cuentas={cuentas}
           categorias={categorias}
           metas={metas}
