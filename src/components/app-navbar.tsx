@@ -13,6 +13,7 @@ import {
   MoreVertical,
   LogOut,
   Link,
+  User,
   X,
 } from 'lucide-react'
 import { crearMovimiento } from '@/app/(app)/actions'
@@ -447,6 +448,34 @@ export function AppNavbar({
                 overflow: 'hidden',
               }}
             >
+              <button
+                onClick={() => {
+                  setDropdownOpen(false)
+                  router.push('/perfil')
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  width: '100%',
+                  padding: '12px 16px',
+                  border: 'none',
+                  backgroundColor: 'transparent',
+                  cursor: 'pointer',
+                  fontSize: '0.9rem',
+                  color: '#212121',
+                  textAlign: 'left',
+                }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#f5f5f5'
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'transparent'
+                }}
+              >
+                <User size={16} />
+                Mi perfil
+              </button>
               <button
                 onClick={() => {
                   setDropdownOpen(false)
