@@ -214,12 +214,20 @@ create policy "categorias_select" on public.categorias for select
   using (empresa_id is null or empresa_id = public.my_empresa_id());
 create policy "categorias_insert" on public.categorias for insert
   with check (empresa_id = public.my_empresa_id());
+create policy "categorias_update" on public.categorias for update
+  using (empresa_id = public.my_empresa_id());
+create policy "categorias_delete" on public.categorias for delete
+  using (empresa_id = public.my_empresa_id() and public.is_admin());
 
 -- EMISORES
 create policy "emisores_select" on public.emisores for select
   using (empresa_id = public.my_empresa_id());
 create policy "emisores_insert" on public.emisores for insert
   with check (empresa_id = public.my_empresa_id());
+create policy "emisores_update" on public.emisores for update
+  using (empresa_id = public.my_empresa_id());
+create policy "emisores_delete" on public.emisores for delete
+  using (empresa_id = public.my_empresa_id() and public.is_admin());
 
 -- METAS
 create policy "metas_select" on public.metas for select
