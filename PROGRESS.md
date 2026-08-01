@@ -48,24 +48,32 @@ Cliente admin (`src/lib/supabase/admin.ts`) usa `SUPABASE_SERVICE_ROLE_KEY` sól
 ### Empresa (`/empresa`) — admin only
 - Editar nombre, dirección, moneda y colores (color picker + hex sincronizado + previsualización en vivo). Al guardar, `revalidatePath('/', 'layout')` aplica los nuevos colores en toda la app.
 - CRUD de cuentas: crear, editar (todos), eliminar (sólo admin — consistente con RLS `cuentas_delete`).
+- **CRUD de usuarios de la empresa** (`UsuariosPanel`): invitar (crea auth user + row `usuarios` atómico), editar nombre/cargo/es_admin, eliminar (cascade en `auth.users`). Guardarraíles: no puede editarse ni eliminarse a sí mismo desde el panel; no puede quedar la empresa sin admins.
 - Redirige a `/perfil` si el usuario no es admin.
 
+### Emisores (`/emisores`)
+- CRUD completo: crear, editar, eliminar (protegido por RLS a la empresa; delete sólo admin).
+- Wired al form de crear/editar movimiento (select "Emisor") y visible en la fila del historial.
+
+### Categorías (`/categorias`)
+- Dos secciones: propias (editables) y globales (solo lectura).
+- CRUD sobre propias con selector de icono (mismos íconos de Lucide que usa el historial de movimientos).
+
 ### Links (`/links`)
-- Grid de atajos a rutas principales, perfil, docs de Supabase, etc.
+- Grid de atajos a rutas principales, perfil, emisores, categorías, docs de Supabase, etc.
 
 ## Falta
 
-### Task 5 — Emisores / notificaciones / membresías
-Ninguna de las siguientes existe todavía en Next; sí en Django:
+### Migraciones pendientes en el proyecto Supabase
+- Aplicar `supabase/migrations/001_emisores_categorias_update_delete.sql` (policies UPDATE/DELETE para `emisores` y `categorias`). Sin esto el CRUD de esas dos tablas fallará por RLS.
 
-- **Emisores** (`public.emisores`): CRUD para registrar quién emite/recibe pagos (proveedor, cliente, etc.). Referenciar desde movimientos.
-- **Notificaciones**: el campanita del navbar hoy es placeholder. Falta modelo, tabla y bandeja.
+### Pendientes funcionales
+- **Notificaciones**: la campanita del navbar sigue placeholder. Falta modelo, tabla y bandeja.
 - **Membresías**: el campo `empresas.membresia` existe pero no hay flujo para cambiarla. Django tenía página de upgrade.
-
-### Otros ítems detectados
-- **Categorías CRUD**: se seleccionan al crear movimiento pero no hay pantalla para gestionarlas. En Django viven en admin de Django.
-- **Usuarios de la empresa**: el admin no tiene pantalla para invitar/listar/editar/borrar usuarios de su empresa. Sólo pueden entrar por `/registro` uniéndose por nombre.
 - **Reportes / exportación**: Django tiene vistas de reportes por rango de fechas y exportación PDF/Excel. No portadas.
+
+### Cosas menores
+- El warning de build "middleware convention is deprecated" (Next.js 16) sugiere renombrar `src/middleware.ts` → `src/proxy.ts`. Aún funciona pero eventualmente hay que migrarlo.
 - **Configuración MCP Supabase**: el proyecto Supabase (`odsovfjwbtvgdoyuzhpp`) está en una cuenta a la que Claude no tiene acceso vía el MCP actual. Cuando se necesite aplicar migraciones directas, decidir entre:
   - Reconectar el MCP claude.ai a esa cuenta (pierdes acceso a las otras) vía `/mcp`.
   - Instalar un MCP local por proyecto: `claude mcp add supabase-gazen npx @supabase/mcp-server-supabase --access-token TOKEN --project-ref odsovfjwbtvgdoyuzhpp`.
