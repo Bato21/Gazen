@@ -37,6 +37,11 @@ interface NavMeta {
   tipo: string
 }
 
+interface NavEmisor {
+  id: string
+  nombre: string
+}
+
 interface AppNavbarProps {
   nombreEmpresa: string
   nombreUsuario: string
@@ -45,6 +50,7 @@ interface AppNavbarProps {
   cuentas: NavCuenta[]
   categorias: NavCategoria[]
   metas: NavMeta[]
+  emisores: NavEmisor[]
 }
 
 const NAV_ITEMS = [
@@ -62,6 +68,7 @@ export function AppNavbar({
   cuentas,
   categorias,
   metas,
+  emisores,
 }: AppNavbarProps) {
   const pathname = usePathname()
   const router = useRouter()
@@ -325,6 +332,16 @@ export function AppNavbar({
                       <option key={meta.id} value={meta.id}>
                         {meta.nombre}
                       </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label style={labelStyle}>Emisor</label>
+                  <select name="emisor" style={selectStyle}>
+                    <option value="">Sin emisor</option>
+                    {emisores.map((emi) => (
+                      <option key={emi.id} value={emi.id}>{emi.nombre}</option>
                     ))}
                   </select>
                 </div>

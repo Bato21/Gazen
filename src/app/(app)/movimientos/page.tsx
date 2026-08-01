@@ -1,8 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { MovimientosView } from '@/components/movimientos/movimientos-view'
-import type { Cuenta, Categoria, Meta, Usuario } from '@/types/database.types'
-import type { MovimientoRow, NavCategoria, NavMeta } from '@/components/movimientos/movimientos-view'
+import type { Cuenta, Categoria, Meta, Usuario, Emisor } from '@/types/database.types'
+import type { MovimientoRow, NavCategoria, NavMeta, NavEmisor } from '@/components/movimientos/movimientos-view'
 
 export default async function MovimientosPage() {
   const supabase = await createClient()
@@ -17,14 +17,14 @@ export default async function MovimientosPage() {
 
   const empresaId = usuarioData?.empresa_id
 
-  const [{ data: cuentasRaw }, { data: movimientosRaw }, { data: categoriasRaw }, { data: metasRaw }] = await Promise.all([
+  const [{ data: cuentasRaw }, { data: movimientosRaw }, { data: categoriasRaw }, { data: metasRaw }, { data: emisoresRaw }] = await Promise.all([
     supabase
       .from('cuentas')
       .select('*')
       .order('created_at', { ascending: true }),
     supabase
       .from('movimientos')
-      .select('id, tipo, monto, fecha, descripcion, cuenta_id, categoria_id, meta_id, categorias(nombre, icono), cuentas(nombre, tipo_cuenta)')
+      .select('id, tipo, monto, fecha, descripcion, cuenta_id, categoria_id, meta_id, emisor_id, categorias(nombre, icono), cuentas(nombre, tipo_cuenta), emisores(nombre)')
       .order('fecha', { ascending: false })
       .limit(300),
     supabase
@@ -39,12 +39,21 @@ export default async function MovimientosPage() {
           .eq('tipo', 'Ahorro') as unknown as
           Promise<{ data: Pick<Meta, 'id' | 'nombre' | 'tipo'>[] | null }>
       : Promise.resolve({ data: null }),
+    empresaId
+      ? supabase
+          .from('emisores')
+          .select('id, nombre')
+          .eq('empresa_id', empresaId)
+          .order('nombre', { ascending: true }) as unknown as
+          Promise<{ data: Pick<Emisor, 'id' | 'nombre'>[] | null }>
+      : Promise.resolve({ data: null }),
   ])
 
   const cuentas = (cuentasRaw ?? []) as unknown as Cuenta[]
   const movimientos = (movimientosRaw ?? []) as unknown as MovimientoRow[]
   const categorias = (categoriasRaw ?? []) as NavCategoria[]
   const metas = (metasRaw ?? []) as NavMeta[]
+  const emisores = (emisoresRaw ?? []) as NavEmisor[]
 
-  return <MovimientosView cuentas={cuentas} movimientos={movimientos} categorias={categorias} metas={metas} />
+  return <MovimientosView cuentas={cuentas} movimientos={movimientos} categorias={categorias} metas={metas} emisores={emisores} />
 }

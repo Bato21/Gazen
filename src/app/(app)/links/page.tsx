@@ -8,6 +8,7 @@ import {
   BookOpen,
   Mail,
   ExternalLink,
+  Building2,
 } from 'lucide-react'
 
 interface LinkItem {
@@ -32,6 +33,7 @@ const SECCIONES: { titulo: string; items: LinkItem[] }[] = [
     titulo: 'Cuenta',
     items: [
       { href: '/perfil', label: 'Mi perfil', description: 'Editar tus datos y contraseña', icon: UserCircle },
+      { href: '/emisores', label: 'Emisores', description: 'Proveedores y clientes de tus movimientos', icon: Building2 },
     ],
   },
   {

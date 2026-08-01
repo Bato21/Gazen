@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import type { Movimiento } from '@/types/database.types'
 
-type MovimientoInsert = Omit<Movimiento, 'id' | 'created_at' | 'emisor_id'>
+type MovimientoInsert = Omit<Movimiento, 'id' | 'created_at'>
 type MovimientoUpdate = Partial<Omit<Movimiento, 'id' | 'created_at' | 'usuario_id'>>
 
 export async function crearMovimiento(formData: FormData): Promise<{ error?: string; success?: boolean }> {
@@ -18,6 +18,7 @@ export async function crearMovimiento(formData: FormData): Promise<{ error?: str
   const descripcion = formData.get('descripcion') as string
   const categoria_id = (formData.get('categoria') as string) || null
   const meta_id = (formData.get('meta') as string) || null
+  const emisor_id = (formData.get('emisor') as string) || null
   const fecha = formData.get('fecha') as string
 
   if (!cuenta_id) return { error: 'Debes seleccionar una cuenta.' }
@@ -31,6 +32,7 @@ export async function crearMovimiento(formData: FormData): Promise<{ error?: str
     descripcion,
     categoria_id,
     meta_id,
+    emisor_id,
     fecha,
   }
 
@@ -70,6 +72,7 @@ export async function editarMovimiento(formData: FormData): Promise<{ error?: st
   const descripcion = formData.get('descripcion') as string
   const categoria_id = (formData.get('categoria') as string) || null
   const meta_id = (formData.get('meta') as string) || null
+  const emisor_id = (formData.get('emisor') as string) || null
   const fecha = formData.get('fecha') as string
 
   if (!cuenta_id) return { error: 'Debes seleccionar una cuenta.' }
@@ -82,6 +85,7 @@ export async function editarMovimiento(formData: FormData): Promise<{ error?: st
     descripcion,
     categoria_id,
     meta_id,
+    emisor_id,
     fecha,
   }
 

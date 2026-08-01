@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import type { Empresa, Usuario, Cuenta, Categoria, Meta } from '@/types/database.types'
+import type { Empresa, Usuario, Cuenta, Categoria, Meta, Emisor } from '@/types/database.types'
 import { AppNavbar } from '@/components/app-navbar'
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
@@ -31,11 +31,12 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   const usuario = usuarioData as Usuario | null
 
-  // Fetch empresa and metas (depend on usuario)
+  // Fetch empresa, metas y emisores (depend on usuario)
   const empresaId = usuario?.empresa_id
   const [
     { data: empresaData },
     { data: metasData },
+    { data: emisoresData },
   ] = await Promise.all([
     empresaId
       ? supabase
@@ -50,6 +51,13 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           .select('id, nombre, tipo')
           .eq('empresa_id', empresaId)
           .eq('tipo', 'Ahorro') as unknown as Promise<{ data: Pick<Meta, 'id' | 'nombre' | 'tipo'>[] | null }>
+      : Promise.resolve({ data: null }),
+    empresaId
+      ? supabase
+          .from('emisores')
+          .select('id, nombre')
+          .eq('empresa_id', empresaId)
+          .order('nombre', { ascending: true }) as unknown as Promise<{ data: Pick<Emisor, 'id' | 'nombre'>[] | null }>
       : Promise.resolve({ data: null }),
   ])
 
@@ -67,6 +75,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const cuentas = cuentasData ?? []
   const categorias = categoriasData ?? []
   const metas = metasData ?? []
+  const emisores = emisoresData ?? []
 
   return (
     <div
@@ -87,6 +96,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           cuentas={cuentas}
           categorias={categorias}
           metas={metas}
+          emisores={emisores}
         />
         <main style={{ padding: '15px' }}>
           {children}

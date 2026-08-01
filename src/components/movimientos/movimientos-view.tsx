@@ -21,18 +21,22 @@ export interface MovimientoRow {
   cuenta_id: string
   categoria_id: string | null
   meta_id: string | null
+  emisor_id: string | null
   categorias: { nombre: string; icono: string | null } | null
   cuentas: { nombre: string; tipo_cuenta: string } | null
+  emisores: { nombre: string } | null
 }
 
 export interface NavCategoria { id: string; nombre: string; icono: string | null }
 export interface NavMeta { id: string; nombre: string; tipo: string }
+export interface NavEmisor { id: string; nombre: string }
 
 interface Props {
   cuentas: Cuenta[]
   movimientos: MovimientoRow[]
   categorias: NavCategoria[]
   metas: NavMeta[]
+  emisores: NavEmisor[]
 }
 
 // ── Icon map (Lucide) ──────────────────────────────────────────────────────────
@@ -182,6 +186,7 @@ function EditarMovimientoDialog({
   cuentas,
   categorias,
   metas,
+  emisores,
   open,
   onOpenChange,
 }: {
@@ -189,6 +194,7 @@ function EditarMovimientoDialog({
   cuentas: Cuenta[]
   categorias: NavCategoria[]
   metas: NavMeta[]
+  emisores: NavEmisor[]
   open: boolean
   onOpenChange: (open: boolean) => void
 }) {
@@ -280,6 +286,16 @@ function EditarMovimientoDialog({
             </div>
 
             <div>
+              <label style={labelStyle}>Emisor</label>
+              <select name="emisor" defaultValue={movimiento.emisor_id ?? ''} style={selectStyle}>
+                <option value="">Sin emisor</option>
+                {emisores.map((emi) => (
+                  <option key={emi.id} value={emi.id}>{emi.nombre}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
               <label style={labelStyle}>Tipo</label>
               <select name="tipoIngreso" required defaultValue={movimiento.tipo} style={selectStyle}>
                 <option value="Ingreso">Ingreso</option>
@@ -330,7 +346,7 @@ function EditarMovimientoDialog({
 
 // ── Main view ──────────────────────────────────────────────────────────────────
 
-export function MovimientosView({ cuentas, movimientos, categorias, metas }: Props) {
+export function MovimientosView({ cuentas, movimientos, categorias, metas, emisores }: Props) {
   const [selectedCuentaId, setSelectedCuentaId] = useState<string | null>(null)
   const [editing, setEditing] = useState<MovimientoRow | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
@@ -557,6 +573,7 @@ export function MovimientosView({ cuentas, movimientos, categorias, metas }: Pro
                       {fecha}
                     </div>
                     <div className="transaccion-metodo">
+                      {mov.emisores?.nombre ? `${mov.emisores.nombre} · ` : ''}
                       {mov.cuentas?.tipo_cuenta ?? ''}
                     </div>
                   </div>
@@ -572,6 +589,7 @@ export function MovimientosView({ cuentas, movimientos, categorias, metas }: Pro
         cuentas={cuentas}
         categorias={categorias}
         metas={metas}
+        emisores={emisores}
         open={editing !== null}
         onOpenChange={(open) => { if (!open) setEditing(null) }}
       />
